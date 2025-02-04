@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "esnext", // หรือ "node16"
+    "target": "es2017", // หรือ target อื่น ๆ ที่คุณต้องการ
+    "outDir": "./dist", // สำคัญ: directory ที่จะเก็บไฟล์ JavaScript ที่ compile แล้ว
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": "./src" // เพิ่ม rootDir เพื่อความถูกต้องของ path
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,36 @@
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  image: node:latest # ใช้ image ของ Node.js
+  cache:
+    paths:
+      - node_modules/
+  script:
+    - npm install # ติดตั้ง dependencies
+    - npm run build # build โค้ด TypeScript
+  artifacts:
+    paths:
+      - dist/ # เก็บไฟล์ที่ build แล้ว
+
+test:
+  stage: test
+  image: node:latest
+  dependencies:
+    - build # ระบุว่า job นี้ต้องรอ build job เสร็จก่อน
+  script:
+    - npm test # รัน test cases
+
+deploy:
+  stage: deploy
+  image: node:latest
+  dependencies:
+    - test # ระบุว่า job นี้ต้องรอ test job เสร็จก่อน
+  script:
+    -  # คำสั่ง deploy โค้ดไปยัง production server หรือ platform อื่น ๆ
+    -  # ตัวอย่าง: ssh user@server "cd /var/www/html && git pull origin main"
+  only:
+    - main # deploy เฉพาะ branch main
