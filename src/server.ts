@@ -1,12 +1,16 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 
 const app = express();
+const prisma = new PrismaClient();
 const port = 3000;
 
-app.get('/', (req, res) => {
-  res.send('Hello from new project!');
+app.get('/', async (req: Request, res: Response) => {
+  // ตัวอย่างการดึงข้อมูลจากฐานข้อมูล
+  const users = await prisma.user.findMany();
+  res.json(users);
 });
 
 app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
+  console.log(`Server running at http://localhost:${port}`);
 });
