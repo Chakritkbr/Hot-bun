@@ -1,10 +1,10 @@
-datasource db {
-  provider = "postgresql"  // ใช้ PostgreSQL
-  url      = env("DATABASE_URL")  // ใช้ environment variable สำหรับเก็บ URL ของฐานข้อมูล
-}
-
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -15,7 +15,6 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-
 model Category {
   id          String  @id @default(uuid())
   name        String  @unique
@@ -23,11 +22,11 @@ model Category {
 }
 
 model Discount {
-  id          String  @id @default(uuid())
-  code        String  @unique
-  percentage  Float
-  start_date  DateTime
-  end_date    DateTime
+  id         String   @id @default(uuid())
+  code       String   @unique
+  percentage Float
+  start_date DateTime
+  end_date   DateTime
 }
 
 model OtpCode {
