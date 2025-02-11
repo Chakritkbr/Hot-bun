@@ -9,6 +9,11 @@ export interface UserInterface {
   role?: string;
 }
 
+export interface TokenPayload {
+  id: string;
+  email: string;
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'mamamiayoohoo';
 
 export const genToken = (payload: object, expiresIn: number = 3600): string => {
@@ -18,9 +23,9 @@ export const genToken = (payload: object, expiresIn: number = 3600): string => {
 };
 
 // ฟังก์ชันสำหรับการตรวจสอบ Token
-export const verifyToken = (token: string): object | null => {
+export const verifyToken = (token: string): TokenPayload | null => {
   try {
-    return jwt.verify(token, JWT_SECRET) as object;
+    return jwt.verify(token, JWT_SECRET) as TokenPayload;
   } catch (err) {
     console.log('Token verification error:', err);
     return null;

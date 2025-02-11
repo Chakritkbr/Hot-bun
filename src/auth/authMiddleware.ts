@@ -1,16 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
 import { UserInterface, verifyToken } from './authUtils';
+import prisma from '../db';
 
 export interface CustomUserRequest extends Request {
   user?: UserInterface;
 }
 
-export const authenticateToken = (
+export const authenticateToken = async (
   req: CustomUserRequest,
   res: Response,
   next: NextFunction
-): void => {
-  // Returning void, don't return the Response object
+): Promise<void> => {
   const authHeader = req.headers['authorization'];
   const token =
     authHeader && authHeader.startsWith('Bearer ')
@@ -19,18 +19,30 @@ export const authenticateToken = (
 
   if (!token) {
     res.status(401).json({ message: 'Token is required' });
-    return; // Exit after sending the response
+    return;
   }
 
   try {
     const payload = verifyToken(token);
-    if (!payload) {
+    if (!payload || !payload.id) {
       res.status(403).json({ message: 'Invalid or expired token.' });
-      return; // Exit after sending the response
+      return;
     }
 
-    req.user = payload as UserInterface;
-    next(); // Continue to the next middleware or route handler
+    // 🔥 ดึงข้อมูล user จาก database
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: { id: true, email: true, role: true }, // ดึง role มาด้วย
+    });
+
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    // ✅ ใส่ข้อมูล user ลงไปใน req
+    req.user = user as UserInterface;
+    next();
   } catch (error) {
     console.error('Error verifying token:', error);
     res.status(500).json({ message: 'Internal server error.' });
@@ -58,4 +70,16 @@ export const authorizeUser = (
   }
 
   next(); // ส่งต่อไปยัง middleware หรือ route handler ถัดไป
+};
+
+export const authorizeRole = (roles: string[]) => {
+  return (req: CustomUserRequest, res: Response, next: NextFunction): void => {
+    if (!req.user || !req.user.role || !roles.includes(req.user.role)) {
+      res
+        .status(403)
+        .json({ message: 'Access denied. Insufficient permissions.' });
+      return;
+    }
+    next();
+  };
 };

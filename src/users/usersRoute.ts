@@ -1,13 +1,22 @@
 import express, { Router } from 'express';
 import * as authControllers from '../auth/authController';
 import * as usersControllers from './usersController';
-import { authenticateToken, authorizeUser } from '../auth/authMiddleware';
+import {
+  authenticateToken,
+  authorizeRole,
+  authorizeUser,
+} from '../auth/authMiddleware';
 
 const router: Router = express.Router();
 
 router.post('/register', usersControllers.registerUser);
 router.post('/login', usersControllers.loginUser);
-router.get('/protected', authenticateToken, authControllers.protectedAdmin);
+router.get(
+  '/protected',
+  authenticateToken,
+  authorizeRole(['ADMIN']),
+  authControllers.protectedAdmin
+);
 router.put(
   '/user/:id',
   authenticateToken,
