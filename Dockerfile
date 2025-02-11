@@ -26,4 +26,4 @@ RUN npm run build
 EXPOSE ${PORT}
 
 # คำสั่งเริ่มต้น รันเซิร์ฟเวอร์จากไฟล์ที่ถูกคอมไพล์
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "dev"]
