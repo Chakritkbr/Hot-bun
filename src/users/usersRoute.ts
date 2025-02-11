@@ -15,7 +15,7 @@ router.put(
   usersControllers.updateUser
 );
 router.delete(
-  '/del/user/:id',
+  '/user/:id',
   authenticateToken,
   authorizeUser,
   usersControllers.deleteUser
