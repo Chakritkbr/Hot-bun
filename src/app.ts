@@ -1,7 +1,11 @@
-import express from 'express';
+import express, { Application } from 'express';
+import dotenv from 'dotenv';
+import prisma from './db';
 
-const app = express();
+dotenv.config({ path: './.env' });
+const app: Application = express();
 
 app.use(express.json());
+app.set('prisma', prisma);
 
 export default app;
