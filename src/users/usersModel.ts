@@ -26,6 +26,17 @@ export class UserModel {
     }
   }
 
+  public async getUserById(userId: string): Promise<User | null> {
+    try {
+      return await prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+    } catch (error) {
+      throw new Error('Error while fetching user by id');
+    }
+  }
   public async createUser(email: string, password: string): Promise<User> {
     try {
       return await prisma.user.create({
@@ -63,5 +74,13 @@ export class UserModel {
     return prisma;
   }
 }
+
+// ฟังก์ชันตรวจสอบว่า user มีในฐานข้อมูลหรือไม่
+export const checkUserExists = async (email: string): Promise<boolean> => {
+  const user = await prisma.user.findUnique({
+    where: { email: email },
+  });
+  return user !== null;
+};
 
 export default UserModel;

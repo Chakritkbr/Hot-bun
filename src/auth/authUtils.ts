@@ -1,9 +1,6 @@
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 export interface UserInterface {
   id: string;
@@ -28,14 +25,6 @@ export const verifyToken = (token: string): object | null => {
     console.log('Token verification error:', err);
     return null;
   }
-};
-
-// ฟังก์ชันตรวจสอบว่า user มีในฐานข้อมูลหรือไม่
-export const checkUserExists = async (email: string): Promise<boolean> => {
-  const user = await prisma.user.findUnique({
-    where: { email: email },
-  });
-  return user !== null;
 };
 
 // ฟังก์ชันสำหรับการเข้ารหัสรหัสผ่าน

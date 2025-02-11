@@ -14,6 +14,15 @@ export const userValidate = Joi.object({
       'string.pattern.base':
         'Password must contain at least one uppercase letter.',
     }),
+  newPassword: Joi.string()
+    .min(6)
+    .pattern(new RegExp('(?=.*[A-Z])'))
+    .optional() // newPassword ไม่จำเป็นต้องมี แต่ถ้ามีจะต้องผ่านการตรวจสอบ
+    .messages({
+      'string.min': 'New password must be at least 6 characters long.',
+      'string.pattern.base':
+        'New password must contain at least one uppercase letter.',
+    }),
 });
 
 export const categoryValidate = Joi.object({
