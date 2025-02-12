@@ -4,12 +4,16 @@ import { hashPassword, checkPassword, genToken } from '../auth/authUtils';
 import UserModel from './usersModel';
 
 // การลงทะเบียนผู้ใช้ใหม่
-export const registerUser = async (req: Request, res: Response) => {
+export const registerUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { email, password } = req.body;
 
   const { error } = userValidate.validate({ email, password });
   if (error) {
-    return res.status(400).json({ message: error.details[0].message });
+    res.status(400).json({ message: error.details[0].message });
+    return;
   }
 
   try {
@@ -17,11 +21,11 @@ export const registerUser = async (req: Request, res: Response) => {
     const existingUser = await userModel.getUserByEmail(email);
 
     if (existingUser) {
-      return res.status(400).json({ message: 'Email is already in use.' });
+      res.status(400).json({ message: 'Email is already in use.' });
+      return;
     }
 
     const hashedPassword = await hashPassword(password);
-
     const user = await userModel.createUser(email, hashedPassword);
 
     res.status(201).json({ message: 'User registered successfully.', user });
@@ -30,14 +34,14 @@ export const registerUser = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal server error.' });
   }
 };
-
 // การล็อกอินผู้ใช้
-export const loginUser = async (req: Request, res: Response) => {
+export const loginUser = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   const { error } = userValidate.validate({ email, password });
   if (error) {
-    return res.status(400).json({ message: error.details[0].message });
+    res.status(400).json({ message: error.details[0].message });
+    return;
   }
 
   try {
@@ -45,13 +49,15 @@ export const loginUser = async (req: Request, res: Response) => {
     const user = await userModel.getUserByEmail(email);
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password.' });
+      res.status(400).json({ message: 'Invalid email or password.' });
+      return;
     }
 
     const isPasswordValid = await checkPassword(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Invalid email or password.' });
+      res.status(400).json({ message: 'Invalid email or password.' });
+      return;
     }
 
     const token = genToken({ id: user.id, email: user.email });
@@ -64,28 +70,34 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 
 // การอัพเดตข้อมูลผู้ใช้
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { email, password, newPassword } = req.body;
   const userId = req.params.id;
 
   // ตรวจสอบข้อมูลที่ได้รับ
-  const { error } = userValidate.validate({ email, password });
+  const { error } = userValidate.validate({ email, password, newPassword });
   if (error) {
-    return res.status(400).json({ message: error.details[0].message });
+    res.status(400).json({ message: error.details[0].message });
+    return;
   }
 
   try {
     const userModel = UserModel.getInstance();
-    const user = await userModel.getUserByEmail(email);
+    const user = await userModel.getUserById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      res.status(404).json({ message: 'User not found.' });
+      return;
     }
 
     // ตรวจสอบว่ารหัสผ่านเดิมถูกต้องหรือไม่
     const isPasswordValid = await checkPassword(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Invalid password.' });
+      res.status(400).json({ message: 'Invalid password.' });
+      return;
     }
 
     // แฮชรหัสผ่านใหม่ถ้ามีการอัพเดต
@@ -109,7 +121,10 @@ export const updateUser = async (req: Request, res: Response) => {
 };
 
 // การลบข้อมูลผู้ใช้
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const userId = req.params.id;
 
   try {
@@ -117,7 +132,8 @@ export const deleteUser = async (req: Request, res: Response) => {
     const user = await userModel.getUserByEmail(req.body.email);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      res.status(404).json({ message: 'User not found.' });
+      return;
     }
 
     const deletedUser = await userModel.deleteUser(userId);

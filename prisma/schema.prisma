@@ -11,8 +11,15 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
+  role      Role     @default(GUEST) // ค่าเริ่มต้นเป็น GUEST
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  GUEST
+  USER
+  ADMIN
 }
 
 model Category {
