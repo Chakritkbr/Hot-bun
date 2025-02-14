@@ -27,7 +27,11 @@ export const verifyToken = (token: string): TokenPayload | null => {
   try {
     return jwt.verify(token, JWT_SECRET) as TokenPayload;
   } catch (err) {
-    console.log('Token verification error:', err);
+    if (err instanceof jwt.TokenExpiredError) {
+      console.error('Token expired:', err.message);
+    } else {
+      console.error('Token verification error:', (err as Error).message);
+    }
     return null;
   }
 };

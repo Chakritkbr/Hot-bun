@@ -44,3 +44,50 @@ export const discountValidate = Joi.object({
   start_date: Joi.date().required(),
   end_date: Joi.date().min(Joi.ref('start_date')).required(),
 });
+
+export const productValidate = Joi.object({
+  name: Joi.string().required().messages({
+    'string.base': 'Product name must be a string',
+    'string.empty': 'Product name cannot be empty',
+    'any.required': 'Product name is required',
+  }),
+  description: Joi.string().allow('').messages({
+    'string.base': 'Description must be a string',
+    'string.empty': 'Description cannot be empty',
+  }),
+  price: Joi.number().min(0).required().messages({
+    'number.base': 'Price must be a number',
+    'number.min': 'Price must be at least 0',
+    'any.required': 'Price is required',
+  }),
+  stock: Joi.number().min(0).required().messages({
+    'number.base': 'Stock must be a number',
+    'number.min': 'Stock must be at least 0',
+    'any.required': 'Stock is required',
+  }),
+  categoryId: Joi.string().optional().allow(null).messages({
+    'string.base': 'Category ID must be a string',
+  }),
+});
+
+export const updateProductValidate = Joi.object({
+  name: Joi.string().optional().messages({
+    'string.base': 'Product name must be a string',
+    'string.empty': 'Product name cannot be empty',
+  }),
+  description: Joi.string().optional().allow('').messages({
+    'string.base': 'Description must be a string',
+    'string.empty': 'Description cannot be empty',
+  }),
+  price: Joi.number().optional().min(0).messages({
+    'number.base': 'Price must be a number',
+    'number.min': 'Price must be at least 0',
+  }),
+  stock: Joi.number().optional().min(0).messages({
+    'number.base': 'Stock must be a number',
+    'number.min': 'Stock must be at least 0',
+  }),
+  categoryId: Joi.string().optional().allow(null).messages({
+    'string.base': 'Category ID must be a string',
+  }),
+});
