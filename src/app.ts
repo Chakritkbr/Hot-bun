@@ -4,6 +4,7 @@ import prisma from './db';
 import userRoutes from './users/usersRoute';
 import categoriesRoutes from './categories/categoriesRoute';
 import productsRoutes from './products/productsRoute';
+import cartRoutes from './cart/cartRoute';
 
 dotenv.config({ path: './.env' });
 const app: Application = express();
@@ -14,5 +15,6 @@ app.set('prisma', prisma);
 app.use('/auth', userRoutes);
 app.use('/api', categoriesRoutes);
 app.use('/api', productsRoutes);
+app.use('/api', cartRoutes);
 
 export default app;

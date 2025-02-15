@@ -14,6 +14,7 @@ model User {
   role      Role     @default(GUEST) // ค่าเริ่มต้นเป็น GUEST
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  cart      Cart?
 }
 
 enum Role {
@@ -56,4 +57,23 @@ model Product {
   updatedAt   DateTime @updatedAt
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  cartItems   CartItem[]
+}
+
+model Cart {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  CartItem       CartItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  cartId    String  @map("cart_id")
+  productId String
+  quantity  Int     @default(1)
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id]) // ✅ เพิ่มความสัมพันธ์
 }
