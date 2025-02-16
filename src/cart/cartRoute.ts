@@ -20,6 +20,11 @@ router.patch(
   authenticateToken,
   CartController.updateCartItem
 );
+router.patch(
+  '/cart/cart-items/:cartId',
+  authenticateToken,
+  CartController.updateMultipleCartItems
+);
 router.delete(
   '/cart/items/:cartItemId',
   authenticateToken,

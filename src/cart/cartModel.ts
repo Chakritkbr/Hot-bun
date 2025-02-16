@@ -155,4 +155,46 @@ export class CartModel {
       );
     }
   }
+
+  static async updateMutipleCartItems(
+    cartId: string,
+    cartItems: { cartItemId: string; quantity: number }[]
+  ): Promise<CartItem[]> {
+    try {
+      const cart = await prisma.cart.findUnique({
+        where: { id: cartId },
+        include: { CartItem: true },
+      });
+
+      if (!cart) {
+        throw new Error('Cart not found');
+      }
+
+      const invalidItems = cartItems.filter(
+        (item) => !cart.CartItem.some((ci) => ci.id === item.cartItemId)
+      );
+
+      if (invalidItems.length > 0) {
+        throw new Error(
+          `Some cart items not found in this cart: ${invalidItems
+            .map((i) => i.cartItemId)
+            .join(', ')}`
+        );
+      }
+
+      return await prisma.$transaction(
+        cartItems.map(({ cartItemId, quantity }) =>
+          prisma.cartItem.update({
+            where: { id: cartItemId },
+            data: { quantity },
+          })
+        )
+      );
+    } catch (error) {
+      throw new Error(
+        'Error while updating multiple cart items: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
+      );
+    }
+  }
 }

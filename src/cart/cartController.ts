@@ -143,4 +143,35 @@ export class CartController {
         .json({ message: 'Error while fetching cart items', error });
     }
   }
+
+  static async updateMultipleCartItems(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const { cartId } = req.params;
+      const { cartItems } = req.body;
+
+      if (!cartId) {
+        res.status(400).json({ message: 'Cart ID is required' });
+        return;
+      }
+
+      if (!Array.isArray(cartItems) || cartItems.length === 0) {
+        res.status(400).json({ message: 'Invalid cart payload' });
+        return;
+      }
+      const updatedCartItems = await CartModel.updateMutipleCartItems(
+        cartId,
+        cartItems
+      );
+      res
+        .status(200)
+        .json({ message: 'Cart items updated successfully', updatedCartItems });
+    } catch (error) {
+      res.status(400).json({
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
 }
