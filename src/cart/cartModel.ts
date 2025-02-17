@@ -64,9 +64,6 @@ export class CartModel {
     quantity: number
   ): Promise<CartItem> {
     try {
-      if (quantity <= 0) {
-        throw new Error('Invalid quantity');
-      }
       const updatedCartItem = await prisma.cartItem.update({
         where: { id: cartItemId },
         data: { quantity },
@@ -196,5 +193,11 @@ export class CartModel {
           (error instanceof Error ? error.message : 'Unknown error')
       );
     }
+  }
+
+  static async getCartItem(cartId: string, productId: string) {
+    return prisma.cartItem.findFirst({
+      where: { cartId, productId },
+    });
   }
 }

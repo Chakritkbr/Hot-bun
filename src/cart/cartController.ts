@@ -1,7 +1,7 @@
 import { Response, Request } from 'express';
 import { CartModel } from './cartModel';
-import { Product } from '@prisma/client';
 import { ProductsModel } from '../products/productsModel';
+import prisma from '../db';
 
 export class CartController {
   static async getCartByUserId(req: Request, res: Response): Promise<void> {
@@ -24,12 +24,10 @@ export class CartController {
       const { productId, quantity } = req.body;
 
       const product = await ProductsModel.getById(productId);
-      if (!product) {
-        res.status(404).json({ message: 'Product not found' });
-        return;
-      }
-      if (product.stock < quantity) {
-        res.status(400).json({ message: 'Not enough stock' });
+      if (!product || product.stock < quantity) {
+        res.status(400).json({
+          message: product ? 'Not enough stock' : 'Product not found',
+        });
         return;
       }
 
@@ -38,15 +36,30 @@ export class CartController {
         cart = await CartModel.createCart(userId);
       }
 
-      const cartItem = await CartModel.addItemToCart(
-        cart.id,
-        productId,
-        quantity
-      );
+      let existingCartItem = await CartModel.getCartItem(cart.id, productId);
+
+      if (existingCartItem) {
+        // ถ้ามีสินค้าอยู่แล้ว ให้อัปเดตจำนวน
+        const newQuantity = existingCartItem.quantity + quantity;
+        if (newQuantity > product.stock) {
+          res.status(400).json({ message: 'Not enough stock' });
+          return;
+        }
+
+        existingCartItem = await prisma.cartItem.update({
+          where: { id: existingCartItem.id },
+          data: { quantity: newQuantity },
+        });
+      } else {
+        // ถ้าไม่มีให้สร้างใหม่
+        existingCartItem = await prisma.cartItem.create({
+          data: { cartId: cart.id, productId, quantity },
+        });
+      }
 
       res
         .status(201)
-        .json({ message: 'Item added to cart successfully', cartItem });
+        .json({ message: 'Item added to cart successfully', existingCartItem });
     } catch (error) {
       res
         .status(500)
@@ -58,25 +71,24 @@ export class CartController {
     try {
       const { cartItemId } = req.params;
       const { quantity } = req.body;
-      const cartItem = await CartModel.isCartItemExists(cartItemId);
+
       if (quantity <= 0) {
         res.status(400).json({ message: 'Quantity must be greater than 0' });
         return;
       }
+
+      const cartItem = await CartModel.isCartItemExists(cartItemId);
       if (!cartItem) {
         res.status(404).json({ message: 'Cart item not found' });
         return;
       }
 
       const product = await ProductsModel.getById(cartItem.productId);
-      if (!product) {
-        res.status(404).json({ message: 'Product not found' });
-        return;
-      }
-      if (product.stock < quantity) {
+      if (!product || product.stock < quantity) {
         res.status(400).json({ message: 'Not enough stock' });
         return;
       }
+
       await CartModel.updateCartItem(cartItemId, quantity);
       res.status(200).json({ message: 'Cart item updated successfully' });
     } catch (error) {
@@ -89,11 +101,13 @@ export class CartController {
   static async removeCartItem(req: Request, res: Response): Promise<void> {
     try {
       const { cartItemId } = req.params;
+
       const cartItem = await CartModel.isCartItemExists(cartItemId);
       if (!cartItem) {
         res.status(404).json({ message: 'Cart item not found' });
         return;
       }
+
       await CartModel.removeItemFromCart(cartItemId);
       res.status(200).json({ message: 'Cart item removed successfully' });
     } catch (error) {

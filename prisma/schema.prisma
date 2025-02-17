@@ -15,6 +15,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   cart      Cart?
+  orders    Order[]
 }
 
 enum Role {
@@ -58,6 +59,7 @@ model Product {
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   cartItems   CartItem[]
+  orderItems  OrderItem[]
 }
 
 model Cart {
@@ -77,3 +79,32 @@ model CartItem {
   cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id]) // ✅ เพิ่มความสัมพันธ์
 }
+
+model Order {
+  id         String      @id @default(cuid()) // Unique Order ID
+  userId     String                             // ผู้ใช้ที่สั่งซื้อ
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[]                    // รายการสินค้าในออเดอร์
+  total      Float                          // ราคารวมของออเดอร์
+  status     OrderStatus @default(PENDING)  // สถานะออเดอร์
+  createdAt  DateTime    @default(now())    // วันที่สร้าง
+  updatedAt  DateTime    @updatedAt         // อัปเดตล่าสุด
+}
+
+model OrderItem {
+  id        String  @id @default(cuid()) 
+  orderId   String  
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String  
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     // จำนวนสินค้าที่สั่งซื้อ
+  price     Float   // ราคาสินค้า ณ เวลาสั่งซื้อ
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+

@@ -25,7 +25,7 @@ export const authenticateToken = async (
   try {
     const payload = verifyToken(token);
     if (!payload || !payload.id) {
-      res.status(403).json({ message: 'Invalid or expired token.' });
+      res.status(403).json({ status: 'error', message: 'Token is required' });
       return;
     }
 
@@ -36,7 +36,7 @@ export const authenticateToken = async (
     });
 
     if (!user) {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ status: 'error', message: 'User not found' });
       return;
     }
 
@@ -45,7 +45,7 @@ export const authenticateToken = async (
     next();
   } catch (error) {
     console.error('Error verifying token:', error);
-    res.status(500).json({ message: 'Internal server error.' });
+    res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 };
 
@@ -56,9 +56,11 @@ export const authorizeUser = (
 ): void => {
   const userId = req.user?.id;
   const { id } = req.params;
+  console.log('userId : ' + userId);
+  console.log('id : ' + id);
 
   if (!userId) {
-    res.status(401).json({ message: 'Unauthorized access' });
+    res.status(401).json({ status: 'error', message: 'Unauthorized access' });
     return;
   }
 
@@ -75,9 +77,10 @@ export const authorizeUser = (
 export const authorizeRole = (roles: string[]) => {
   return (req: CustomUserRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !req.user.role || !roles.includes(req.user.role)) {
-      res
-        .status(403)
-        .json({ message: 'Access denied. Insufficient permissions.' });
+      res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Insufficient permissions.',
+      });
       return;
     }
     next();
