@@ -1,10 +1,10 @@
-import { OtpCode } from '@prisma/client';
-import UserModel from '../users/usersModel';
 import prisma from '../db';
+import { hashPassword } from './authUtils';
 
 export class AuthModel {
   static async updatePassword(email: string, newPassword: string) {
-    return prisma.user.update({
+    const hashedPassword = await hashPassword(newPassword);
+    prisma.user.update({
       where: { email },
       data: { password: newPassword },
     });

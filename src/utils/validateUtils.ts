@@ -25,6 +25,30 @@ export const userValidate = Joi.object({
     }),
 });
 
+export const authEmailValidate = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.email': 'Invalid email format.',
+    'any.required': 'Email is required.',
+  }),
+});
+
+export const authPasswordResetValidate = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.email': 'Invalid email format.',
+    'any.required': 'Email is required.',
+  }),
+  newPassword: Joi.string()
+    .min(6)
+    .pattern(new RegExp('(?=.*[A-Z])'))
+    .required()
+    .messages({
+      'string.min': 'New password must be at least 6 characters long.',
+      'string.pattern.base':
+        'New password must contain at least one uppercase letter.',
+      'any.required': 'New password is required.',
+    }),
+});
+
 export const categoryValidate = Joi.object({
   name: Joi.string().required().messages({
     'string.base': 'Category name must be a string',
