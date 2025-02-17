@@ -1,15 +1,28 @@
 import nodemailer from 'nodemailer';
 
-export const transporter = nodemailer.createTransport({
-  host: process.env.HOST_SERVICE,
-  port: 587,
-  auth: {
-    user: process.env.ADMIN_EMAIL,
-    pass: process.env.ADMIN_PASS,
-  },
-});
+export const createTransporter = () => {
+  if (
+    !process.env.HOST_SERVICE ||
+    !process.env.ADMIN_EMAIL ||
+    !process.env.ADMIN_PASS
+  ) {
+    throw new Error('Missing environment variables for email configuration.');
+  }
+  return nodemailer.createTransport({
+    host: process.env.HOST_SERVICE,
+    port: 587,
+    auth: {
+      user: process.env.ADMIN_EMAIL,
+      pass: process.env.ADMIN_PASS,
+    },
+  });
+};
 
-export const sendOtp = async (email: string, otp: string): Promise<void> => {
+export const sendOtp = async (
+  transporter: nodemailer.Transporter,
+  email: string,
+  otp: string
+): Promise<void> => {
   const mailOptions = {
     from: process.env.ADMIN_EMAIL,
     to: email,

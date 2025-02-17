@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
-import * as authControllers from '../auth/authController';
 import * as usersControllers from './usersController';
+import { AuthController } from '../auth/authController';
 import {
   authenticateToken,
   authorizeRole,
@@ -11,12 +11,7 @@ const router: Router = express.Router();
 
 router.post('/register', usersControllers.registerUser);
 router.post('/login', usersControllers.loginUser);
-router.get(
-  '/protected',
-  authenticateToken,
-  authorizeRole(['ADMIN']),
-  authControllers.protectedAdmin
-);
+
 router.put(
   '/user/:id',
   authenticateToken,
@@ -30,7 +25,8 @@ router.delete(
   usersControllers.deleteUser
 );
 
-router.post('/service/forgot-password', authControllers.forgotPassword);
-router.post('/service/verify-otp', authControllers.verifyOtp);
+router.post('/service/forgot-password', AuthController.forgotPassword);
+router.post('/service/verify-otp', AuthController.verifyOTP);
+router.post('/service/resetpassword', AuthController.resetPassword);
 
 export default router;
