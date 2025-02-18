@@ -44,7 +44,7 @@ export const authenticateToken = async (
     }
 
     // ✅ ใส่ข้อมูล user ลงไปใน req
-    console.log('Authenticated User:', user);
+
     req.user = user as UserInterface;
     next();
   } catch (error) {

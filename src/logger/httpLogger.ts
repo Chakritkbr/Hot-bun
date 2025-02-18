@@ -7,11 +7,7 @@ const httpLogger = (
   res: Response,
   next: NextFunction
 ) => {
-  const userRole = req.user?.role || 'GUEST';
-  console.log(userRole);
-  logger.info(
-    `[HTTP] ${req.method} ${req.url} - ${req.ip} - User Role: ${userRole}`
-  );
+  logger.info(`[HTTP] ${req.method} ${req.url} - ${req.ip}`);
   next();
 };
 
