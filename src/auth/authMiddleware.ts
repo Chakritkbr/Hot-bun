@@ -44,6 +44,7 @@ export const authenticateToken = async (
     }
 
     // ✅ ใส่ข้อมูล user ลงไปใน req
+    console.log('Authenticated User:', user);
     req.user = user as UserInterface;
     next();
   } catch (error) {
@@ -59,8 +60,6 @@ export const authorizeUser = (
 ): void => {
   const userId = req.user?.id;
   const { id } = req.params;
-  console.log('userId : ' + userId);
-  console.log('id : ' + id);
 
   if (!userId) {
     return next(new UnauthorizedError('Unauthorized access'));

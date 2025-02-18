@@ -1,6 +1,7 @@
 // errorHandler.ts
 import { NextFunction, Request, Response } from 'express';
 import { AppError } from './AppError';
+import logger from '../logger/logger';
 
 export const errorHandler = (
   err: any,
@@ -8,7 +9,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  console.error(err);
+  logger.error(`[ERROR] ${req.method} ${req.url} - ${err.message}`);
 
   if (err instanceof AppError) {
     // ถ้าเป็น instance ของ AppError ให้ใช้ statusCode ที่กำหนด

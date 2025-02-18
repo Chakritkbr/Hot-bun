@@ -7,11 +7,15 @@ import productsRoutes from './products/productsRoute';
 import cartRoutes from './cart/cartRoute';
 import OrderRoutes from './order/orderRoute';
 import { errorHandler } from './middleware/errorHandler';
+import errorLogger from './logger/errorLogger';
+import httpLogger from './logger/httpLogger';
 
 dotenv.config({ path: './.env' });
 const app: Application = express();
 
 app.use(express.json());
+app.use(httpLogger);
+app.use(errorLogger);
 app.set('prisma', prisma);
 
 app.use('/auth', userRoutes);
