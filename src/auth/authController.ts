@@ -7,27 +7,25 @@ import {
   authPasswordResetValidate,
 } from '../utils/validateUtils';
 import OtpService from '../otp/otpModel';
+import { BadRequestError, NotFoundError } from '../middleware/AppError';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 export class AuthController {
-  static async forgotPassword(req: Request, res: Response): Promise<void> {
-    try {
+  static forgotPassword = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { email } = req.body;
       const { error } = authEmailValidate.validate(req.body);
       if (error) {
-        res.status(400).json({
-          status: 'error',
-          message: error.details[0].message,
-        });
-        return;
+        throw new BadRequestError(error.details[0].message);
       }
 
       const isEmailExist = await checkUserExists(email);
       if (!isEmailExist) {
-        res.status(404).json({ status: 'error', message: 'Email not found' });
-        return;
+        throw new NotFoundError('Email not found');
       }
+
       const otp = OtpService.genOTP();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
 
       await OtpService.saveOTPToDatabase(email, otp, expiresAt);
 
@@ -38,35 +36,24 @@ export class AuthController {
         status: 'success',
         message: 'OTP sent successfully',
       });
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      res.status(500).json({
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
-  }
+  );
 
-  static async verifyOTP(req: Request, res: Response): Promise<void> {
-    const { email, otp } = req.body;
+  static verifyOTP = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+      const { email, otp } = req.body;
 
-    if (!email || !otp) {
-      res
-        .status(400)
-        .json({ status: 'error', message: 'Email and OTP are required.' });
-      return;
-    }
-    try {
+      if (!email || !otp) {
+        throw new BadRequestError('Email and OTP are required');
+      }
+
       const storedOTPData = await OtpService.getOTPFromDatabase(email);
-
       if (!storedOTPData) {
-        res.status(404).json({ status: 'error', message: 'OTP not found' });
-        return;
+        throw new NotFoundError('OTP not found');
       }
 
       if (OtpService.isOTPExpired(storedOTPData.expiresAt)) {
-        res.status(400).json({ status: 'error', message: 'OTP has expired' });
-        return;
+        throw new BadRequestError('OTP has expired');
       }
 
       await OtpService.deleteOTP(email);
@@ -74,52 +61,36 @@ export class AuthController {
         status: 'success',
         message: 'OTP verified. Proceed with password reset.',
       });
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      res.status(500).json({
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
-  }
+  );
 
-  static async resetPassword(req: Request, res: Response): Promise<void> {
-    const { email, newPassword, otp } = req.body;
-    const { error } = authPasswordResetValidate.validate({
-      email,
-      newPassword,
-    });
-    if (error) {
-      res.status(400).json({
-        status: 'error',
-        message: error.details[0].message,
+  static resetPassword = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+      const { email, newPassword, otp } = req.body;
+      const { error } = authPasswordResetValidate.validate({
+        email,
+        newPassword,
       });
-      return; // Stop execution if validation fails
-    }
+      if (error) {
+        throw new BadRequestError(error.details[0].message);
+      }
 
-    try {
       const otpRecord = await OtpService.getOTPFromDatabase(email);
       if (!otpRecord || otpRecord.otp !== otp) {
-        res.status(400).json({ status: 'error', message: 'OTP ไม่ถูกต้อง' });
-        return;
+        throw new BadRequestError('Incorrect OTP');
       }
+
       if (OtpService.isOTPExpired(otpRecord.expiresAt)) {
-        res
-          .status(400)
-          .json({ status: 'error', message: 'OTP หมดอายุ กรุณาขอ OTP ใหม่' });
-        return;
+        throw new BadRequestError('OTP expired. Please request a new OTP');
       }
+
       await AuthModel.updatePassword(email, newPassword);
       await OtpService.deleteOTP(email);
+
       res.status(200).json({
         status: 'success',
         message: 'Password reset successful.',
       });
-    } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
-  }
+  );
 }

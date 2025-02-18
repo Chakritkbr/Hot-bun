@@ -1,54 +1,40 @@
 import { Request, Response } from 'express';
 import { OrderModel } from './orderModel';
-import { CartModel } from '../cart/cartModel';
-import { ProductsModel } from '../products/productsModel';
 import { CustomUserRequest } from '../auth/authMiddleware';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { NotFoundError, UnauthorizedError } from '../middleware/AppError';
 
 export class OrderController {
-  static async getAllOrders(req: Request, res: Response): Promise<void> {
-    try {
+  static getAllOrders = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const orders = await OrderModel.getAllOrder();
       res.status(200).json({
         status: 'success',
         message: 'Get all orders successfully',
         orders,
       });
-    } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
-  }
-  static async getOrderById(req: Request, res: Response): Promise<void> {
-    try {
+  );
+  static getOrderById = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { orderId } = req.params;
       const order = await OrderModel.getOrderById(orderId);
+      if (!order) {
+        throw new NotFoundError('Order not found');
+      }
       res.status(200).json({
         status: 'success',
         message: 'Get order successfully',
         order,
       });
-    } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
-  }
+  );
 
-  static async createOrder(
-    req: CustomUserRequest,
-    res: Response
-  ): Promise<void> {
-    try {
+  static createOrder = asyncHandler(
+    async (req: CustomUserRequest, res: Response): Promise<void> => {
       const userId = req.user?.id;
       if (!userId) {
-        res.status(401).json({
-          status: 'error',
-          message: 'Unauthorized',
-        });
-        return;
+        throw new UnauthorizedError('Unauthorized');
       }
 
       const order = await OrderModel.createOrder(userId);
@@ -57,33 +43,20 @@ export class OrderController {
         message: 'Create order successfully',
         order,
       });
-    } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
-  }
-  static async getOrdersByUserId(req: CustomUserRequest, res: Response) {
-    try {
+  );
+  static getOrdersByUserId = asyncHandler(
+    async (req: CustomUserRequest, res: Response): Promise<void> => {
       const userId = req.user?.id;
       if (!userId) {
-        res.status(401).json({
-          status: 'error',
-          message: 'Unauthorized',
-        });
-        return;
+        throw new UnauthorizedError('Unauthorized');
       }
+
       const orders = await OrderModel.getOrdersByUserId(userId);
       res.status(200).json({
         status: 'success',
         orders,
       });
-    } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
-  }
+  );
 }

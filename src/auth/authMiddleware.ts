@@ -1,6 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { UserInterface, verifyToken } from './authUtils';
 import prisma from '../db';
+import {
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../middleware/AppError';
 
 export interface CustomUserRequest extends Request {
   user?: UserInterface;
@@ -18,15 +24,13 @@ export const authenticateToken = async (
       : null;
 
   if (!token) {
-    res.status(401).json({ message: 'Token is required' });
-    return;
+    return next(new UnauthorizedError('Token is required'));
   }
 
   try {
     const payload = verifyToken(token);
     if (!payload || !payload.id) {
-      res.status(403).json({ status: 'error', message: 'Token is required' });
-      return;
+      return next(new ForbiddenError('Token is invalid or expired'));
     }
 
     // 🔥 ดึงข้อมูล user จาก database
@@ -36,8 +40,7 @@ export const authenticateToken = async (
     });
 
     if (!user) {
-      res.status(404).json({ status: 'error', message: 'User not found' });
-      return;
+      return next(new NotFoundError('User not found'));
     }
 
     // ✅ ใส่ข้อมูล user ลงไปใน req
@@ -45,7 +48,7 @@ export const authenticateToken = async (
     next();
   } catch (error) {
     console.error('Error verifying token:', error);
-    res.status(500).json({ status: 'error', message: 'Internal server error' });
+    return next(new InternalServerError());
   }
 };
 
@@ -60,15 +63,13 @@ export const authorizeUser = (
   console.log('id : ' + id);
 
   if (!userId) {
-    res.status(401).json({ status: 'error', message: 'Unauthorized access' });
-    return;
+    return next(new UnauthorizedError('Unauthorized access'));
   }
 
   if (userId !== id) {
-    res
-      .status(403)
-      .json({ message: 'You are not authorized to access this resource' });
-    return;
+    return next(
+      new ForbiddenError('You are not authorized to access this resource')
+    );
   }
 
   next(); // ส่งต่อไปยัง middleware หรือ route handler ถัดไป
@@ -77,11 +78,9 @@ export const authorizeUser = (
 export const authorizeRole = (roles: string[]) => {
   return (req: CustomUserRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !req.user.role || !roles.includes(req.user.role)) {
-      res.status(403).json({
-        status: 'error',
-        message: 'Access denied. Insufficient permissions.',
-      });
-      return;
+      return next(
+        new ForbiddenError('Access denied. Insufficient permissions.')
+      );
     }
     next();
   };

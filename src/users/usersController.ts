@@ -2,7 +2,11 @@ import { Request, Response } from 'express';
 import { userValidate } from '../utils/validateUtils';
 import { hashPassword, checkPassword, genToken } from '../auth/authUtils';
 import UserModel from './usersModel';
-import { BadRequestError } from '../middleware/AppError';
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../middleware/AppError';
 import { asyncHandler } from '../middleware/asyncHandler';
 
 // การลงทะเบียนผู้ใช้ใหม่
@@ -25,7 +29,14 @@ export const registerUser = asyncHandler(
     const hashedPassword = await hashPassword(password);
     const user = await userModel.createUser(email, hashedPassword);
 
-    res.status(201).json({ message: 'User registered successfully.', user });
+    res.status(201).json({
+      status: 'success',
+      message: 'User registered successfully.',
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    });
   }
 );
 // การล็อกอินผู้ใช้
@@ -42,18 +53,26 @@ export const loginUser = asyncHandler(
     const user = await userModel.getUserByEmail(email);
 
     if (!user) {
-      throw new BadRequestError('Invalid email or password.');
+      throw new NotFoundError('Invalid email or password.');
     }
 
     const isPasswordValid = await checkPassword(password, user.password);
 
     if (!isPasswordValid) {
-      throw new BadRequestError('Invalid email or password.');
+      throw new UnauthorizedError('Invalid email or password.');
     }
 
     const token = genToken({ id: user.id, email: user.email });
 
-    res.status(200).json({ message: 'Login successful.', token });
+    res.status(200).json({
+      status: 'success',
+      message: 'Login successful.',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    });
   }
 );
 
@@ -72,12 +91,12 @@ export const updateUser = asyncHandler(
     const user = await userModel.getUserById(userId);
 
     if (!user) {
-      throw new BadRequestError('User not found.');
+      throw new NotFoundError('User not found.');
     }
 
     const isPasswordValid = await checkPassword(password, user.password);
     if (!isPasswordValid) {
-      throw new BadRequestError('Invalid password.');
+      throw new UnauthorizedError('Invalid password.');
     }
 
     let updatedPassword = user.password;
@@ -90,9 +109,14 @@ export const updateUser = asyncHandler(
       password: updatedPassword,
     });
 
-    res
-      .status(200)
-      .json({ message: 'User updated successfully.', user: updatedUser });
+    res.status(200).json({
+      status: 'success',
+      message: 'User updated successfully.',
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+      },
+    });
   }
 );
 
@@ -105,13 +129,18 @@ export const deleteUser = asyncHandler(
     const user = await userModel.getUserByEmail(req.body.email);
 
     if (!user) {
-      throw new BadRequestError('User not found.');
+      throw new NotFoundError('User not found.');
     }
 
     const deletedUser = await userModel.deleteUser(userId);
 
-    res
-      .status(200)
-      .json({ message: 'User deleted successfully.', user: deletedUser });
+    res.status(200).json({
+      status: 'success',
+      message: 'User deleted successfully.',
+      user: {
+        id: deletedUser.id,
+        email: deletedUser.email,
+      },
+    });
   }
 );

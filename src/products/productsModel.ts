@@ -1,5 +1,6 @@
 import prisma from '../db';
 import { Product } from '@prisma/client';
+import { AppError } from '../middleware/AppError';
 
 export class ProductsModel {
   // ใช้ static เพื่อไม่ต้องสร้าง instance ใหม่ในกรณีที่ไม่ต้องการสถานะของอินสแตนซ์
@@ -8,10 +9,7 @@ export class ProductsModel {
       const products = await prisma.product.findMany();
       return products;
     } catch (error) {
-      throw new Error(
-        'Error while fetching products: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while fetching products');
     }
   }
 
@@ -22,10 +20,7 @@ export class ProductsModel {
       });
       return product;
     } catch (error) {
-      throw new Error(
-        'Error while fetching product: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while fetching product by id');
     }
   }
 
@@ -38,10 +33,7 @@ export class ProductsModel {
       });
       return newProduct;
     } catch (error) {
-      throw new Error(
-        'Error while creating product: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while creating product');
     }
   }
 
@@ -53,10 +45,7 @@ export class ProductsModel {
       });
       return updatedProduct;
     } catch (error) {
-      throw new Error(
-        'Error while updating product: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while updating product');
     }
   }
 
@@ -67,10 +56,7 @@ export class ProductsModel {
       });
       return { message: 'Product deleted successfully' };
     } catch (error) {
-      throw new Error(
-        'Error while deleting product: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while deleting product');
     }
   }
 
@@ -81,10 +67,7 @@ export class ProductsModel {
       });
       return products;
     } catch (error) {
-      throw new Error(
-        'Error while fetching products by category: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while fetching products by category');
     }
   }
 
@@ -95,10 +78,7 @@ export class ProductsModel {
       });
       return !!product;
     } catch (error) {
-      throw new Error(
-        'Error while checking if product name exists: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while checking if product name exists');
     }
   }
 
@@ -112,9 +92,9 @@ export class ProductsModel {
       });
       return !!product;
     } catch (error) {
-      throw new Error(
-        'Error while checking if updated product name exists: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
+      throw new AppError(
+        500,
+        'Error while checking if updated product name exists'
       );
     }
   }

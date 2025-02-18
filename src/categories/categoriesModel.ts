@@ -1,4 +1,5 @@
 import prisma from '../db';
+import { AppError, BadRequestError } from '../middleware/AppError';
 
 export interface CategoriesInterface {
   id?: string;
@@ -8,22 +9,35 @@ export interface CategoriesInterface {
 
 export class Categories {
   static async create(category: CategoriesInterface): Promise<void> {
-    await prisma.category.create({
-      data: {
-        name: category.name,
-        description: category.description,
-      },
-    });
+    try {
+      await prisma.category.create({
+        data: {
+          name: category.name,
+          description: category.description,
+        },
+      });
+    } catch (error) {
+      throw new AppError(500, 'Error while creating category');
+    }
   }
 
   static async getAll(): Promise<CategoriesInterface[]> {
-    return prisma.category.findMany();
+    try {
+      return await prisma.category.findMany();
+    } catch (error) {
+      throw new AppError(500, 'Error while fetching categories');
+    }
   }
 
   static async getById(id: string): Promise<CategoriesInterface | null> {
-    return prisma.category.findUnique({
-      where: { id },
-    });
+    try {
+      const category = await prisma.category.findUnique({
+        where: { id },
+      });
+      return category;
+    } catch (error) {
+      throw new AppError(500, 'Error while fetching category by ID');
+    }
   }
 
   static async updateById(
@@ -31,7 +45,7 @@ export class Categories {
     update: Partial<CategoriesInterface>
   ): Promise<void> {
     if (Object.keys(update).length === 0) {
-      throw new Error('No fields update');
+      throw new BadRequestError('No fields to update');
     }
     await prisma.category.update({
       where: { id },
@@ -40,9 +54,13 @@ export class Categories {
   }
 
   static async deleteById(id: string): Promise<void> {
-    await prisma.category.delete({
-      where: { id },
-    });
+    try {
+      await prisma.category.delete({
+        where: { id },
+      });
+    } catch (error) {
+      throw new AppError(500, 'Error while deleting category');
+    }
   }
 
   static async isNameExist(name: string): Promise<boolean> {

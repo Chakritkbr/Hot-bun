@@ -1,5 +1,6 @@
 import prisma from '../db';
 import { Cart, CartItem } from '@prisma/client';
+import { AppError, BadRequestError } from '../middleware/AppError';
 
 export class CartModel {
   static async getCartByUserId(userId: string): Promise<Cart | null> {
@@ -14,12 +15,10 @@ export class CartModel {
           },
         },
       });
+
       return cart;
     } catch (error) {
-      throw new Error(
-        'Error while fetching cart: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while fetching cart');
     }
   }
 
@@ -30,10 +29,7 @@ export class CartModel {
       });
       return newCart;
     } catch (error) {
-      throw new Error(
-        'Error while creating cart: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while creating cart');
     }
   }
 
@@ -52,10 +48,7 @@ export class CartModel {
       });
       return cartItem;
     } catch (error) {
-      throw new Error(
-        'Error while adding item to cart: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while adding item to cart');
     }
   }
 
@@ -71,10 +64,7 @@ export class CartModel {
 
       return updatedCartItem;
     } catch (error) {
-      throw new Error(
-        'Error while updating cart item: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while updating cart item');
     }
   }
 
@@ -84,10 +74,7 @@ export class CartModel {
         where: { id: cartItemId },
       });
     } catch (error) {
-      throw new Error(
-        'Error while removing item from cart: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while removing item from cart');
     }
   }
 
@@ -97,10 +84,7 @@ export class CartModel {
         where: { cartId },
       });
     } catch (error) {
-      throw new Error(
-        'Error while clearing cart: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while clearing cart');
     }
   }
 
@@ -111,10 +95,7 @@ export class CartModel {
       });
       return cart ? true : false;
     } catch (error) {
-      throw new Error(
-        'Error Cart not found: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while get cart');
     }
   }
 
@@ -125,10 +106,7 @@ export class CartModel {
       });
       return cartItem;
     } catch (error) {
-      throw new Error(
-        'Error CartItem not found: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while get cart item');
     }
   }
 
@@ -141,15 +119,12 @@ export class CartModel {
       });
 
       if (!cart || !cart.CartItem.length) {
-        throw new Error('Cart not found or no cart items available');
+        throw new AppError(404, 'No cart items found');
       }
 
       return cart.CartItem; // ส่งกลับ CartItem ทั้งหมด
     } catch (error) {
-      throw new Error(
-        'Error while fetching cart items: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while fetching cart items');
     }
   }
 
@@ -172,8 +147,8 @@ export class CartModel {
       );
 
       if (invalidItems.length > 0) {
-        throw new Error(
-          `Some cart items not found in this cart: ${invalidItems
+        throw new BadRequestError(
+          `Some cart items not found: ${invalidItems
             .map((i) => i.cartItemId)
             .join(', ')}`
         );
@@ -188,10 +163,7 @@ export class CartModel {
         )
       );
     } catch (error) {
-      throw new Error(
-        'Error while updating multiple cart items: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      throw new AppError(500, 'Error while updating multiple cart items');
     }
   }
 

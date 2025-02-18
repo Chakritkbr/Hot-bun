@@ -90,5 +90,11 @@ export const checkUserExists = async (email: string): Promise<boolean> => {
   });
   return user !== null;
 };
+export const checkUserIdExists = async (id: string): Promise<boolean> => {
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+  return user !== null;
+};
 
 export default UserModel;

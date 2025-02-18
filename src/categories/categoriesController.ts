@@ -1,91 +1,101 @@
 import { Request, Response } from 'express';
 import { Categories, CategoriesInterface } from './categoriesModel';
 import { categoryValidate } from '../utils/validateUtils';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { BadRequestError, NotFoundError } from '../middleware/AppError';
 
 export class CategoriesController {
-  static async create(req: Request, res: Response): Promise<void> {
-    try {
+  static create = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { error } = categoryValidate.validate(req.body);
       if (error) {
-        res.status(400).json({ message: error.details[0].message });
+        throw new BadRequestError(error.details[0].message);
       }
+
       const { name, description } = req.body;
 
       const isNameExist = await Categories.isNameExist(name);
       if (isNameExist) {
-        res.status(400).json({ message: 'Name already exists' });
-        return;
+        throw new BadRequestError('Category name already exists.');
       }
+
       await Categories.create({ name, description });
-      res.status(201).json({ message: 'Category created successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(201).json({
+        status: 'success',
+        message: 'Category created successfully',
+      });
     }
-  }
+  );
 
-  static async getAllCategories(req: Request, res: Response): Promise<void> {
-    try {
+  static getAllCategories = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const categories = await Categories.getAll();
-      res
-        .status(200)
-        .json({ message: 'Categories retrieved successfully', categories });
-    } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(200).json({
+        status: 'success',
+        message: 'Categories retrieved successfully',
+        categories,
+      });
     }
-  }
-
-  static async getCategoryById(req: Request, res: Response): Promise<void> {
-    try {
+  );
+  static getCategoryById = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { id } = req.params;
       const category = await Categories.getById(id);
       if (!category) {
-        res.status(404).json({ message: 'Category not found' });
+        throw new NotFoundError('Category not found');
       }
-      res
-        .status(200)
-        .json({ message: 'Category retrieved successfully', category });
-    } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
 
-  static async updateCategory(req: Request, res: Response): Promise<void> {
-    try {
+      res.status(200).json({
+        status: 'success',
+        message: 'Category retrieved successfully',
+        category,
+      });
+    }
+  );
+
+  static updateCategory = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { error } = categoryValidate.validate(req.body);
       if (error) {
-        res.status(400).json({ message: error.details[0].message });
+        throw new BadRequestError(error.details[0].message);
       }
+
       const { id } = req.params;
       const category = await Categories.getById(id);
       if (!category) {
-        res.status(404).json({ message: 'Category not found' });
+        throw new NotFoundError('Category not found');
       }
+
       const update: Partial<CategoriesInterface> = req.body;
 
       if (update.name) {
         const isExist = await Categories.isUpdateNameExist(id, update.name);
         if (isExist) {
-          res.status(400).json({ message: 'Name already exists' });
+          throw new BadRequestError('Category name already exists.');
         }
       }
-      await Categories.updateById(id, update);
-      res.status(200).json({ message: 'Category updated successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
 
-  static async deleteCategory(req: Request, res: Response): Promise<void> {
-    try {
+      await Categories.updateById(id, update);
+      res.status(200).json({
+        status: 'success',
+        message: 'Category updated successfully',
+      });
+    }
+  );
+
+  static deleteCategory = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { id } = req.params;
       const category = await Categories.getById(id);
       if (!category) {
-        res.status(404).json({ message: 'Category not found' });
+        throw new NotFoundError('Category not found');
       }
+
       await Categories.deleteById(id);
-      res.status(200).json({ message: 'Category deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(200).json({
+        status: 'success',
+        message: 'Category deleted successfully',
+      });
     }
-  }
+  );
 }

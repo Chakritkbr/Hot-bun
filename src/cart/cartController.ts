@@ -1,34 +1,41 @@
+import { checkUserIdExists } from './../users/usersModel';
 import { Response, Request } from 'express';
 import { CartModel } from './cartModel';
 import { ProductsModel } from '../products/productsModel';
 import prisma from '../db';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { BadRequestError, NotFoundError } from '../middleware/AppError';
 
 export class CartController {
-  static async getCartByUserId(req: Request, res: Response): Promise<void> {
-    try {
+  static getCartByUserId = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { userId } = req.params;
       const cart = await CartModel.getCartByUserId(userId);
       if (!cart) {
-        res.status(404).json({ message: 'Cart not found' });
-        return;
+        throw new NotFoundError('Cart not found');
       }
-      res.status(200).json({ message: 'Cart retrieved successfully', cart });
-    } catch (error) {
-      res.status(500).json({ message: 'Error while fetching cart', error });
+      res.status(200).json({
+        status: 'success',
+        message: 'Cart retrieved successfully',
+        cart,
+      });
     }
-  }
+  );
 
-  static async addItemToCart(req: Request, res: Response): Promise<void> {
-    try {
+  static addItemToCart = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { userId } = req.params;
       const { productId, quantity } = req.body;
-
+      const user = await checkUserIdExists(userId);
+      console.log(user);
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
       const product = await ProductsModel.getById(productId);
       if (!product || product.stock < quantity) {
-        res.status(400).json({
-          message: product ? 'Not enough stock' : 'Product not found',
-        });
-        return;
+        throw new BadRequestError(
+          product ? 'Not enough stock' : 'Product not found'
+        );
       }
 
       let cart = await CartModel.getCartByUserId(userId);
@@ -39,11 +46,10 @@ export class CartController {
       let existingCartItem = await CartModel.getCartItem(cart.id, productId);
 
       if (existingCartItem) {
-        // ถ้ามีสินค้าอยู่แล้ว ให้อัปเดตจำนวน
+        // Update quantity if item exists
         const newQuantity = existingCartItem.quantity + quantity;
         if (newQuantity > product.stock) {
-          res.status(400).json({ message: 'Not enough stock' });
-          return;
+          throw new BadRequestError('Not enough stock');
         }
 
         existingCartItem = await prisma.cartItem.update({
@@ -51,141 +57,120 @@ export class CartController {
           data: { quantity: newQuantity },
         });
       } else {
-        // ถ้าไม่มีให้สร้างใหม่
+        // Create new item if not exists
         existingCartItem = await prisma.cartItem.create({
           data: { cartId: cart.id, productId, quantity },
         });
       }
 
-      res
-        .status(201)
-        .json({ message: 'Item added to cart successfully', existingCartItem });
-    } catch (error) {
-      res
-        .status(500)
-        .json({ message: 'Error while adding item to cart', error });
+      res.status(201).json({
+        status: 'success',
+        message: 'Item added to cart successfully',
+        existingCartItem,
+      });
     }
-  }
+  );
 
-  static async updateCartItem(req: Request, res: Response): Promise<void> {
-    try {
+  static updateCartItem = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { cartItemId } = req.params;
       const { quantity } = req.body;
 
       if (quantity <= 0) {
-        res.status(400).json({ message: 'Quantity must be greater than 0' });
-        return;
+        throw new BadRequestError('Quantity must be greater than 0');
       }
 
       const cartItem = await CartModel.isCartItemExists(cartItemId);
       if (!cartItem) {
-        res.status(404).json({ message: 'Cart item not found' });
-        return;
+        throw new NotFoundError('Cart item not found');
       }
 
       const product = await ProductsModel.getById(cartItem.productId);
       if (!product || product.stock < quantity) {
-        res.status(400).json({ message: 'Not enough stock' });
-        return;
+        throw new BadRequestError('Not enough stock');
       }
 
       await CartModel.updateCartItem(cartItemId, quantity);
-      res.status(200).json({ message: 'Cart item updated successfully' });
-    } catch (error) {
-      res
-        .status(500)
-        .json({ message: 'Error while updating cart item', error });
+      res.status(200).json({
+        status: 'success',
+        message: 'Cart item updated successfully',
+      });
     }
-  }
+  );
 
-  static async removeCartItem(req: Request, res: Response): Promise<void> {
-    try {
+  static removeCartItem = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { cartItemId } = req.params;
 
       const cartItem = await CartModel.isCartItemExists(cartItemId);
       if (!cartItem) {
-        res.status(404).json({ message: 'Cart item not found' });
-        return;
+        throw new NotFoundError('Cart item not found');
       }
 
       await CartModel.removeItemFromCart(cartItemId);
-      res.status(200).json({ message: 'Cart item removed successfully' });
-    } catch (error) {
-      res
-        .status(500)
-        .json({ message: 'Error while removing cart item', error });
+      res.status(200).json({
+        status: 'success',
+        message: 'Cart item removed successfully',
+      });
     }
-  }
+  );
 
-  static async clearCart(req: Request, res: Response): Promise<void> {
-    try {
+  static clearCart = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { userId } = req.params;
       const cart = await CartModel.getCartByUserId(userId);
       if (!cart) {
-        res.status(404).json({ message: 'Cart not found' });
-        return;
+        throw new NotFoundError('Cart not found');
       }
       await CartModel.clearCart(cart.id);
-      res.status(200).json({ message: 'Cart cleared successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error while clearing cart', error });
+      res.status(200).json({
+        status: 'success',
+        message: 'Cart cleared successfully',
+      });
     }
-  }
+  );
 
-  static async getCartItemsByCartId(
-    req: Request,
-    res: Response
-  ): Promise<void> {
-    try {
-      const { cartId } = req.params; // รับ cartId จาก URL params
-      const cart = await CartModel.isCartExists(cartId); // เรียกใช้ฟังก์ชันที่ปรับปรุงแล้ว
+  static getCartItemsByCartId = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+      const { cartId } = req.params;
+      const cart = await CartModel.isCartExists(cartId);
       if (!cart) {
-        res.status(404).json({ message: 'Cart not found' });
-        return;
+        throw new NotFoundError('Cart not found');
       }
-      const cartItems = await CartModel.getCartItemsByCartId(cartId); // เรียกใช้ฟังก์ชันที่ปรับปรุงแล้ว
+      const cartItems = await CartModel.getCartItemsByCartId(cartId);
       if (cartItems.length === 0) {
-        res.status(404).json({ message: 'No cart items found' });
-        return;
+        throw new NotFoundError('No cart items found');
       }
-      res
-        .status(200)
-        .json({ message: 'Cart items retrieved successfully', cartItems });
-    } catch (error) {
-      res
-        .status(500)
-        .json({ message: 'Error while fetching cart items', error });
+      res.status(200).json({
+        status: 'success',
+        message: 'Cart items retrieved successfully',
+        cartItems,
+      });
     }
-  }
+  );
 
-  static async updateMultipleCartItems(
-    req: Request,
-    res: Response
-  ): Promise<void> {
-    try {
+  static updateMultipleCartItems = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
       const { cartId } = req.params;
       const { cartItems } = req.body;
 
       if (!cartId) {
-        res.status(400).json({ message: 'Cart ID is required' });
-        return;
+        throw new BadRequestError('Cart ID is required');
       }
 
       if (!Array.isArray(cartItems) || cartItems.length === 0) {
-        res.status(400).json({ message: 'Invalid cart payload' });
-        return;
+        throw new BadRequestError('Invalid cart payload');
       }
+
       const updatedCartItems = await CartModel.updateMutipleCartItems(
         cartId,
         cartItems
       );
-      res
-        .status(200)
-        .json({ message: 'Cart items updated successfully', updatedCartItems });
-    } catch (error) {
-      res.status(400).json({
-        message: error instanceof Error ? error.message : 'Unknown error',
+      res.status(200).json({
+        status: 'success',
+        message: 'Cart items updated successfully',
+        updatedCartItems,
       });
     }
-  }
+  );
 }
