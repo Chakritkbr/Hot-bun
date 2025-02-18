@@ -1,19 +1,21 @@
 import nodemailer from 'nodemailer';
+import { InternalServerError, BadRequestError } from '../middleware/AppError';
 
 export const createTransporter = () => {
-  if (
-    !process.env.HOST_SERVICE ||
-    !process.env.ADMIN_EMAIL ||
-    !process.env.ADMIN_PASS
-  ) {
-    throw new Error('Missing environment variables for email configuration.');
+  const { HOST_SERVICE, ADMIN_EMAIL, ADMIN_PASS } = process.env;
+
+  if (!HOST_SERVICE || !ADMIN_EMAIL || !ADMIN_PASS) {
+    throw new BadRequestError(
+      'Missing environment variables for email configuration.'
+    );
   }
+
   return nodemailer.createTransport({
-    host: process.env.HOST_SERVICE,
+    host: HOST_SERVICE,
     port: 587,
     auth: {
-      user: process.env.ADMIN_EMAIL,
-      pass: process.env.ADMIN_PASS,
+      user: ADMIN_EMAIL,
+      pass: ADMIN_PASS,
     },
   });
 };
@@ -29,11 +31,12 @@ export const sendOtp = async (
     subject: 'Your OTP Code',
     text: `Your OTP code is ${otp}`,
   };
+
   try {
     await transporter.sendMail(mailOptions);
     console.log(`Email sent to ${email}`);
   } catch (error) {
-    console.log('Error sending email:', error);
-    throw new Error('Error sending email');
+    console.error('Error sending email:', error);
+    throw new InternalServerError('Error sending email');
   }
 };
