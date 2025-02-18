@@ -1,4 +1,5 @@
 import { PrismaClient, User } from '@prisma/client';
+import { AppError } from '../middleware/AppError';
 
 const prisma = new PrismaClient();
 
@@ -22,7 +23,7 @@ export class UserModel {
         },
       });
     } catch (error) {
-      throw new Error('Error while fetching user by email');
+      throw new AppError(500, 'Error while fetching user by email');
     }
   }
 
@@ -34,7 +35,7 @@ export class UserModel {
         },
       });
     } catch (error) {
-      throw new Error('Error while fetching user by id');
+      throw new AppError(500, 'Error while fetching user by id');
     }
   }
   public async createUser(email: string, password: string): Promise<User> {
@@ -46,7 +47,7 @@ export class UserModel {
         },
       });
     } catch (error) {
-      throw new Error('Error while creating user');
+      throw new AppError(500, 'Error while creating user');
     }
   }
 
@@ -57,7 +58,7 @@ export class UserModel {
         data,
       });
     } catch (error) {
-      throw new Error('Error while updating user');
+      throw new AppError(500, 'Error while updating user');
     }
   }
 
@@ -67,11 +68,18 @@ export class UserModel {
         where: { id: userId },
       });
     } catch (error) {
-      throw new Error('Error while deleting user');
+      throw new AppError(500, 'Error while deleting user');
     }
   }
-  public getPrisma(): PrismaClient {
-    return prisma;
+  public async checkUserExists(email: string): Promise<boolean> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+      return user !== null;
+    } catch (error) {
+      throw new AppError(500, 'Error while checking if user exists');
+    }
   }
 }
 
