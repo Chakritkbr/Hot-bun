@@ -27,7 +27,7 @@ export class AuthController {
       const otp = OtpService.genOTP();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
 
-      await OtpService.saveOTPToDatabase(email, otp, expiresAt);
+      await OtpService.saveOTP(email, otp, expiresAt);
 
       const transporter = createTransporter();
       await sendOtp(transporter, email, otp);
@@ -47,7 +47,7 @@ export class AuthController {
         throw new BadRequestError('Email and OTP are required');
       }
 
-      const storedOTPData = await OtpService.getOTPFromDatabase(email);
+      const storedOTPData = await OtpService.getOTP(email);
       if (!storedOTPData) {
         throw new NotFoundError('OTP not found');
       }
@@ -75,7 +75,7 @@ export class AuthController {
         throw new BadRequestError(error.details[0].message);
       }
 
-      const otpRecord = await OtpService.getOTPFromDatabase(email);
+      const otpRecord = await OtpService.getOTP(email);
       if (!otpRecord || otpRecord.otp !== otp) {
         throw new BadRequestError('Incorrect OTP');
       }

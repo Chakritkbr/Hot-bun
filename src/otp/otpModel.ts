@@ -1,14 +1,16 @@
 import otpGenerator from 'otp-generator';
 import { OtpCode } from '@prisma/client';
 import prisma from '../db';
-import { BadRequestError, NotFoundError } from '../middleware/AppError';
+import { NotFoundError } from '../middleware/AppError';
+import redis from '../utils/redis';
 
 export class OtpService {
-  static async saveOTPToDatabase(
+  static async saveOTP(
     email: string,
     otp: string,
     expiresAt: Date
   ): Promise<OtpCode> {
+    await redis.setex(`otp:${email}`, 600, otp);
     const existingOtp = await prisma.otpCode.findFirst({ where: { email } });
 
     if (existingOtp) {
@@ -21,7 +23,21 @@ export class OtpService {
     return prisma.otpCode.create({ data: { email, otp, expiresAt } });
   }
 
-  static async getOTPFromDatabase(email: string): Promise<OtpCode> {
+  // ฟังก์ชันดึง OTP จาก Redis หรือ Fallback ไปที่ Database
+  static async getOTP(email: string): Promise<OtpCode> {
+    const otp = await redis.get(`otp:${email}`);
+    if (otp) {
+      const otpCode: OtpCode = {
+        id: -1, // กำหนด -1 เพื่อบ่งบอกว่าไม่ใช่ค่าจากฐานข้อมูล
+        email,
+        otp,
+        expiresAt: new Date(Date.now() + 600000), // กำหนดเวลาให้หมดอายุใน 10 นาที
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      return otpCode;
+    }
+    // Fallback ไปที่ Database ถ้า OTP ไม่พบใน Redis
     const otpCode = await prisma.otpCode.findFirst({
       where: { email },
       orderBy: { createdAt: 'desc' },
@@ -35,6 +51,7 @@ export class OtpService {
   }
 
   static async deleteOTP(email: string): Promise<void> {
+    await redis.del(`otp:${email}`);
     await prisma.otpCode.deleteMany({ where: { email } });
   }
 
@@ -45,10 +62,8 @@ export class OtpService {
     });
   }
 
-  static isOTPExpired(expiresAt: Date): void {
-    if (new Date() > expiresAt) {
-      throw new BadRequestError('OTP has expired');
-    }
+  static isOTPExpired(expiresAt: Date): boolean {
+    return new Date() > expiresAt;
   }
 }
 
