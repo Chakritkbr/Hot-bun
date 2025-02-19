@@ -3,6 +3,7 @@ import { Categories, CategoriesInterface } from './categoriesModel';
 import { categoryValidate } from '../utils/validateUtils';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { BadRequestError, NotFoundError } from '../middleware/AppError';
+import { setCache } from '../middleware/cache';
 
 export class CategoriesController {
   static create = asyncHandler(
@@ -30,6 +31,11 @@ export class CategoriesController {
   static getAllCategories = asyncHandler(
     async (req: Request, res: Response): Promise<void> => {
       const categories = await Categories.getAll();
+      const cacheKey = req.path;
+      console.log('controllre-key:' + cacheKey);
+      if (cacheKey) {
+        await setCache(cacheKey, categories, 3600);
+      }
       res.status(200).json({
         status: 'success',
         message: 'Categories retrieved successfully',
@@ -43,6 +49,11 @@ export class CategoriesController {
       const category = await Categories.getById(id);
       if (!category) {
         throw new NotFoundError('Category not found');
+      }
+      const cacheKey = req.path;
+      console.log('controllre-key:' + cacheKey);
+      if (cacheKey) {
+        await setCache(cacheKey, category, 3600);
       }
 
       res.status(200).json({

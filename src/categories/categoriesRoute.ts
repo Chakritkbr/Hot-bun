@@ -1,6 +1,7 @@
 import express, { Router } from 'express';
 import { CategoriesController } from './categoriesController';
 import { authenticateToken, authorizeRole } from '../auth/authMiddleware';
+import { cache } from '../middleware/cache';
 
 const router: Router = express.Router();
 
@@ -11,9 +12,9 @@ router.post(
   CategoriesController.create
 );
 
-router.get('/categories', CategoriesController.getAllCategories);
+router.get('/categories', cache, CategoriesController.getAllCategories);
 
-router.get('/categories/:id', CategoriesController.getCategoryById);
+router.get('/categories/:id', cache, CategoriesController.getCategoryById);
 
 router.patch(
   '/categories/:id',
