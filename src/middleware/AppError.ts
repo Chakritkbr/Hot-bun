@@ -50,3 +50,9 @@ export class PreconditionFailedError extends AppError {
     super(412, message); // Sends statusCode 412
   }
 }
+
+export class TooManyRequestsError extends AppError {
+  constructor(message: string) {
+    super(429, message); // Sends statusCode 429
+  }
+}

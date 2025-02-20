@@ -9,11 +9,13 @@ import OrderRoutes from './order/orderRoute';
 import { errorHandler } from './middleware/errorHandler';
 import errorLogger from './logger/errorLogger';
 import httpLogger from './logger/httpLogger';
+import { rateLimit } from './middleware/rateLimiter';
 
 dotenv.config({ path: './.env' });
 const app: Application = express();
 
 app.use(express.json());
+app.use(rateLimit);
 app.use(httpLogger);
 app.use(errorLogger);
 app.set('prisma', prisma);
