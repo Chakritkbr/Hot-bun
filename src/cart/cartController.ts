@@ -73,27 +73,59 @@ export class CartController {
 
   static updateCartItem = asyncHandler(
     async (req: Request, res: Response): Promise<void> => {
-      const { cartItemId } = req.params;
-      const { quantity } = req.body;
+      const { cartItemId, quantity } = req.body;
+
+      if (!cartItemId) {
+        throw new BadRequestError('Cart Item ID is required');
+      }
 
       if (quantity <= 0) {
         throw new BadRequestError('Quantity must be greater than 0');
       }
 
+      // ตรวจสอบว่า cartItemId มีอยู่ในฐานข้อมูลหรือไม่
       const cartItem = await CartModel.isCartItemExists(cartItemId);
       if (!cartItem) {
         throw new NotFoundError('Cart item not found');
       }
 
+      // ตรวจสอบสินค้าในสต็อก
       const product = await ProductsModel.getById(cartItem.productId);
       if (!product || product.stock < quantity) {
         throw new BadRequestError('Not enough stock');
       }
 
+      // อัปเดตข้อมูลสินค้าในตะกร้า
       await CartModel.updateCartItem(cartItemId, quantity);
+
       res.status(200).json({
         status: 'success',
         message: 'Cart item updated successfully',
+      });
+    }
+  );
+
+  static updateMultipleCartItems = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+      const { cartId } = req.params;
+      const { cartItems } = req.body;
+
+      if (!cartId) {
+        throw new BadRequestError('Cart ID is required');
+      }
+
+      if (!Array.isArray(cartItems) || cartItems.length === 0) {
+        throw new BadRequestError('Invalid cart payload');
+      }
+
+      const updatedCartItems = await CartModel.updateMutipleCartItems(
+        cartId,
+        cartItems
+      );
+      res.status(200).json({
+        status: 'success',
+        message: 'Cart items updated successfully',
+        updatedCartItems,
       });
     }
   );
@@ -145,31 +177,6 @@ export class CartController {
         status: 'success',
         message: 'Cart items retrieved successfully',
         cartItems,
-      });
-    }
-  );
-
-  static updateMultipleCartItems = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-      const { cartId } = req.params;
-      const { cartItems } = req.body;
-
-      if (!cartId) {
-        throw new BadRequestError('Cart ID is required');
-      }
-
-      if (!Array.isArray(cartItems) || cartItems.length === 0) {
-        throw new BadRequestError('Invalid cart payload');
-      }
-
-      const updatedCartItems = await CartModel.updateMutipleCartItems(
-        cartId,
-        cartItems
-      );
-      res.status(200).json({
-        status: 'success',
-        message: 'Cart items updated successfully',
-        updatedCartItems,
       });
     }
   );

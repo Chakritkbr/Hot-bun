@@ -5,15 +5,11 @@ import { Categories } from '../categories/categoriesModel';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { BadRequestError, NotFoundError } from '../middleware/AppError';
 import redis from '../utils/redis';
-import { setCache } from '../middleware/cache';
 
 export class ProductsController {
   static getAllProducts = asyncHandler(
     async (req: Request, res: Response): Promise<void> => {
       const products = await ProductsModel.getAll();
-      const cacheKey = req.path;
-      console.log('controller-key:' + cacheKey);
-      await redis.set(cacheKey, JSON.stringify(products), 'EX', 3600);
       res.status(200).json({
         status: 'success',
         message: 'Products retrieved successfully',
@@ -30,11 +26,7 @@ export class ProductsController {
       if (!product) {
         throw new NotFoundError('Product not found');
       }
-      const cacheKey = res.locals.cacheKey; // ใช้ cacheKey จาก Middleware
-      console.log('controllre-key:' + cacheKey);
-      if (cacheKey) {
-        await setCache(cacheKey, product, 3600); // บันทึกข้อมูลลง Redis
-      }
+
       res.status(200).json({
         status: 'success',
         message: 'Product retrieved successfully',
@@ -51,11 +43,7 @@ export class ProductsController {
         throw new NotFoundError('No products found for this category');
       }
       const products = await ProductsModel.getByCategory(categoryId);
-      const cacheKey = res.locals.cacheKey; // ใช้ cacheKey จาก Middleware
-      console.log('controllre-key:' + cacheKey);
-      if (cacheKey) {
-        await setCache(cacheKey, products, 3600); // บันทึกข้อมูลลง Redis
-      }
+
       res.status(200).json({
         status: 'success',
         message: 'Products retrieved successfully',
